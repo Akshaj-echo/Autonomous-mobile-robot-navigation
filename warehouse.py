@@ -2,6 +2,25 @@
 import math
 import random
 
+class DynamicObstacle:
+
+    def __init__(
+        self,
+        x,
+        y,
+        velocity_x=0.0,
+        velocity_y=0.0,
+        collision_radius=0.5
+    ):
+        self.position = (x, y)
+        self.velocity = (velocity_x, velocity_y)
+        self.collision_radius = collision_radius
+
+    def update_position(self, dt):
+        self.position = (
+            self.position[0] + self.velocity[0] * dt,
+            self.position[1] + self.velocity[1] * dt
+        )
 
 class Warehouse:
 
@@ -9,13 +28,81 @@ class Warehouse:
         self.width = width
         self.height = height
         self.obstacles = []
+        self.dynamic_obstacles = []
         self.goal_position = None
         self.boundary = []
         self.walkable_cells = []
         self.terrain_costs = {}
 
+    def add_dynamic_obstacle(self, obstacle):
+        self.dynamic_obstacles.append(obstacle)
+
+    def update_dynamic_obstacles(self, dt):
+        for obstacle in self.dynamic_obstacles:
+
+            new_position = (
+                obstacle.position[0] + obstacle.velocity[0] * dt,
+                obstacle.position[1] + obstacle.velocity[1] * dt
+            )
+
+            if self.is_valid_dynamic_obstacle_position(new_position):
+                obstacle.position = new_position
+
+            else:
+                obstacle.velocity = (
+                    -obstacle.velocity[0],
+                    -obstacle.velocity[1]
+                )
 
 
+    def is_robot_colliding_with_dynamic_obstacle(
+        self,
+        robot_position,
+        robot_radius
+):
+        for obstacle in self.dynamic_obstacles:
+
+            distance_x = (
+                robot_position[0]
+                - obstacle.position[0]
+            )
+
+            distance_y = (
+                robot_position[1]
+                - obstacle.position[1]
+            )
+
+            distance_squared = (
+                distance_x ** 2
+                +
+                distance_y ** 2
+            )
+
+            collision_distance = (
+                robot_radius
+                + obstacle.collision_radius
+            )
+
+            if distance_squared <= collision_distance ** 2:
+                return True
+
+        return False
+
+
+
+
+
+
+    def is_valid_dynamic_obstacle_position(self, position):
+        cell = (
+        round(position[0]),
+        round(position[1])
+    )
+
+        return (
+            cell in self.walkable_cells
+            and cell not in self.boundary
+        )
 
 
 def generate_warehouse_shape(warehouse):
